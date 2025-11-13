@@ -1,0 +1,145 @@
+Palo Alto Lab - 2
+
+TAP INTERFACE AND V-WIRE
+
+Palo Alto management port
+configure 
+set deviceconfig system type static
+set deviceconfig system ip-address 10.1.1.20 netmask 255.255.255.0
+commit
+show interface management
+
+After that go to the management window and login PALO ALTO with new credentials
+
+TAP INTERFACE
+Tap interface is a passive listening mode in Palo Alto used to monitor network traffic without interfering/preventing with the live network flow.
+
+Under Network 
+select zones
+add
+Name: TAP
+Type: Tap
+press ok
+next select interfaces
+select the interface towards the Lan switch
+ethernet1/1
+Interface Type: Tap
+Security Zone: TAP
+press ok
+
+Under Policies
+add
+General
+Name: Tap
+Source
+Source zone
+add
+TAP
+Destination
+Destination zone
+add
+TAP
+press ok
+COMMIT
+
+LAN SWITCH
+enable
+configure terminal
+monitor session 1 source interface gig0/0
+monitor session 1 destination interface gig0/2
+
+After that just go to the client machine and search for something and to monitor the traffic go to monitor in palo alto and then session browser.
+
+V-WIRE
+Virtual wire (vWire) is a deployment mode where two interfaces are logically bound together to function as a single, transparent "bump in the wire" without participating in Layer 2 or Layer 3 networking protocols like routing or switching.
+
+vIOS(Internet facing router)
+enable
+configure terminal
+interface gig0/0
+ip address 192.168.20.10 255.255.255.0
+no shutdown
+exit
+interface gig0/1
+ip address dhcp
+no shutdown
+exit
+exit
+show ip interface brief
+ip access-list extended 101
+permit ip any any
+exit
+interface gig0/0
+ip nat inside
+exit
+interface gig0/1
+ip nat outside
+exit
+ip nat inside source list 101 interface gig0/1 overload
+
+Palo Alto management port
+configure 
+set deviceconfig system type static
+set deviceconfig system ip-address 192.168.10.20 netmask 255.255.255.0
+commit
+exit
+show interface management
+
+
+Once we are done with management window, client window, and Internet facing router that is configured with Access Control List then we move to Palo Alto
+
+Under Network
+select zones
+add
+Name: Inside
+Type: Virtual Wire
+press ok
+add
+Name: Outside
+Type: Virtual Wire
+press ok
+select Interfaces
+ethernet1/1
+Interface Name: ethernet1/1
+Interface Type: Virtual Wire
+Security Zone: Inside
+press ok
+ethernet1/2
+Interface Name: ethernet1/2
+Interface Type: Virtual Wire
+Security Zone: Outside
+press ok
+COMMIT
+
+Under Policies
+Select Security
+add
+General
+Name: V-wire traffic
+Source
+source zone
+add
+inside
+destination
+destination zone
+add
+outside
+press ok
+COMMIT
+
+Under Network
+select Virtual Wires
+add
+Name: V-wire Pair
+Interface1: ethernet1/1
+Interface2: ethernet1/2
+press ok
+COMMIT
+
+Now go to the client window and search google.com to check if the device is connected to the internet.
+
+Just to deny the traffic go to the 
+current policy V-wire Traffic
+Select Actions
+Action Setting
+Action: Deny(Change from Allow to Deny)
